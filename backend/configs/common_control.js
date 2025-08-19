@@ -1,13 +1,19 @@
 const express = require('express');
-const connectDb = require('./mongodb.js');
 const url = require('url');
 const path = require('path');
 const app = express();
-
+const session = require('express-session');
 
 app.use(express.json())
 
 
+app.use(session({
+    secret:"abcdef123!@#", // used to sign the session ID
+    resave:false,
+    saveUninitialized:true,
+    cookie:{secure:false} // https only
+
+}))
 // global keys
 
 global.tokenKey  = "abcd@1234!@#$"
@@ -21,7 +27,7 @@ app.use((req,res,next) => {
         if(routePath){
            const handlerPath = path.join(__dirname, "../apis", routePath + ".js");
 
-            // dynamically import router
+            // dynamically import router            
             const handlerModule = require(handlerPath);
 
             if (typeof handlerModule === "function") {
@@ -38,6 +44,7 @@ app.use((req,res,next) => {
         res.status(500).send("Internal Server Error");
     }
 });
+
 
 app.listen(5000,()=>{
     console.log("server is running on port 5000");

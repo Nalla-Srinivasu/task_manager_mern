@@ -1,6 +1,8 @@
-const express = require('express');
+const express = require('express');            
 const router =  express.Router();
 const {generateToken,verifyToken} = require('../configs/common_functions.js');
+const {getDb} = require('../configs/mongodb.js');
+const db = getDb();
 router.post("/login", async (req,res) => {
     const {username,password} = req.body;
     const res_tag = ""
@@ -8,6 +10,9 @@ router.post("/login", async (req,res) => {
         res_tag = res.status(400).send("username and password are required");
         return res_tag;
     }
+    
+    const getUserData = await db.login.findOne({user:username,password:password}).limit(1);
+    console.log(getUserData);
 
     if(username === "admin" && password === "admin"){
         const payload = {
@@ -17,7 +22,9 @@ router.post("/login", async (req,res) => {
 
         const token  =  await generateToken(payload,global.tokenKey);
         if(token){
-           res_tag =  res.status(200).json({
+            const sessionID = req.session.user = {name:"admin",role:"super-user"}
+            console.log(sessionID);
+            res_tag =  res.status(200).json({
                 message: "login successful",
                 token: token
             })
