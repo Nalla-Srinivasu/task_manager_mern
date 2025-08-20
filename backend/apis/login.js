@@ -1,8 +1,7 @@
 const express = require('express');            
 const router =  express.Router();
 const {generateToken,verifyToken} = require('../configs/common_functions.js');
-const {getDb} = require('../configs/mongodb.js');
-const db = getDb();
+const {connectDb} = require('../configs/mongodb.js');
 router.post("/login", async (req,res) => {
     const {username,password} = req.body;
     const res_tag = ""
@@ -11,9 +10,9 @@ router.post("/login", async (req,res) => {
         return res_tag;
     }
     
-    const getUserData = await db.login.findOne({user:username,password:password}).limit(1);
-    console.log(getUserData);
-
+    const db = await connectDb();    
+    const login = await db.collection('login');
+    const getUserData = login.findOne({"user":username,"password":password});
     if(username === "admin" && password === "admin"){
         const payload = {
             username:username,
