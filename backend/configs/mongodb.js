@@ -6,7 +6,7 @@ async function connectDb(){
     try{
         await client.connect();
         console.log("Mongodb connected suucessfully");
-        db =  client.db("task_manager")
+        db =  client.db("task_manager");
         return db;
     }catch(error){
         console.error("Error connecting to mongodb:", error);
