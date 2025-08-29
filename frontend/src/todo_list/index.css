@@ -1,0 +1,15 @@
+.form-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin: 10px;
+}
+
+.from-group{
+    display: flex;
+    flex-direction: row;
+}
+
+.form-control{
+    width: 25vw;
+}
