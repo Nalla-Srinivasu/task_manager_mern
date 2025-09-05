@@ -22,29 +22,25 @@ class todo_list extends Component{
         const {category,name} = this.state
         if(category !== "" && name !== ""){
             const data = {
+                action:"add_data",
                 category:category,
                 name:name
             }
-            const url = "http://localhost:5000/todo/"
-            const options = {
-                action:"add_data",
+            const url = "http://localhost:5000/todo"
+            const options = {                
                 method:"POST",
                 headers:{
                     'Content-Type':'application/json'
                 },
-                data:JSON.stringify(data)
+                body:JSON.stringify(data)
             }
 
             const response = fetch(url,options)
 
             if(response.ok){
-                this.setState(prevState=>(
-                    {responseMsg:{...prevState.responseMsg,responseMsg:"Data add successfully"}}
-                ));
+                this.setState({responseMsg:"Data add successfully"});
             }else{
-                this.setState(prevState=>(
-                    {responseMsg:{...prevState.responseMsg,responseMsg:"Data doesn't add successfully"}}
-                ));
+                this.setState({responseMsg:"Data doesn't add successfully"});
             }
 
         }else{
