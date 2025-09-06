@@ -1,7 +1,6 @@
 .form-container{
     display: flex;
-    flex-direction: column;
-    justify-content: space-around;
+    flex-direction: column;    
     margin: 10px;
 }
 
@@ -12,4 +11,9 @@
 
 .form-control{
     width: 25vw;
+}
+
+
+.add_btn{
+    width: 100px;
 }
