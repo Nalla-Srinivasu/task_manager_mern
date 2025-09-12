@@ -1,16 +1,24 @@
 import './index.css'
 
 const ListTask = props => {
-    const {taskData} = props
-    const {category,name} = taskData
-    return (
+    const {taskData,sno,crud_data} = props
+    const {_id,category,name} = taskData
+    const editFun = () => {
+        crud_data('edit',_id)
+    }
+
+    const deleteFun = () => {
+        crud_data('delete',_id)
+    }
+    return (        
         <tr>
+            <td>{sno}</td>
             <td>{category}</td>
             <td>{name}</td>
-            <td className='d-flex flex-row'>
-                <button type='submit' className='btn btn-secondary'>Edit</button>
+            <td className='d-flex flex-row justify-content-center'>
+                <button type='submit' className='btn btn-outline-secondary' onClick={editFun}>Edit</button>
                 <span>/</span>
-                <button type='submit' className='btn btn-danger'>X</button>
+                <button type='submit' className='btn btn-outline-danger' onClick={deleteFun}>X</button>
             </td>
         </tr>
     )

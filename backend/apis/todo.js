@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {generateToken,verifyToken} = require('../configs/common_functions.js');
 const {connectDb} = require('../configs/mongodb.js');
+const { ObjectId } = require('mongodb');
 
 router.post('/todo', async(req,res)=>{    
     const db = await connectDb();
@@ -19,14 +20,22 @@ router.post('/todo', async(req,res)=>{
 
         const get_check = await todo_list.findOne({"category":category,"name":name})        
         if(!get_check){
-            await todo_list.insertOne({
-                category:category,
-                name:name
-            });
-           return res.status(200).send({
-                status:"succes",
-                res_msg:"Data added succesfully"
-            });
+            try{
+                await todo_list.insertOne({
+                    category:category,
+                    name:name
+                });
+               return res.status(200).send({
+                    status:"success",
+                    res_msg:"Data added successfully"
+                });
+            }catch(e){
+                console.error("DB error:",e.message)
+                return res.status(500).send({
+                    status:"DB error",
+                    res_msg:e.message
+                })
+            }
         }else{
            return res.status(404).send({
                 status:"fail",
@@ -55,6 +64,99 @@ router.post('/todo', async(req,res)=>{
                 msg: "Server error",
                 error: error.message
             });
+        }
+    }
+
+    if(req.body.action == "update_data"){
+        const {category,name,data_id} = req.body;
+        const obj_id = await new ObjectId(data_id)
+        const Objchk = await ObjectId.isValid(data_id)
+
+        if(category == "" || name == ""){
+            return res.status(404).send({
+                status: "fail",
+                res_msg: "Please check the data for category and name of category"
+            })
+        }else if(data_id == ""){
+            return res.status(404).send({
+                status:"fail",
+                res_msg:"please check the data id"
+            })
+        }else if(!Objchk){
+            return res.status(404).send({
+                status:"fail",
+                res_msg:"please check the data id once again"
+            })
+        }
+        const update_check = await todo_list.findOne({"_id": obj_id})
+        if(update_check){
+
+            try{
+                await todo_list.updateOne(
+                    {"_id": obj_id},
+                    {$set:{
+                        category:category,
+                        name:name
+                    }}
+                )
+    
+                return res.status(200).send({
+                    status:"success",
+                    res_msg:"Data updated successfully"
+                })
+            }catch(e){
+                console.error("DB error:",e.message)
+                return res.status(500).send({
+                    status:"DB error",
+                    res_msg:e.message
+                })
+            }
+        }else{
+            return res.status(404).send({
+                status:"fail",
+                res_msg:"check the data id once again, data not found"
+            })
+        }
+
+    }
+
+    if(req.body.action === "delete_data"){
+        const {data_id} = req.body;
+        const obj_id = await new ObjectId(data_id)
+        const Objchk = await ObjectId.isValid(data_id)
+        if(data_id == ""){
+            return res.status(404).send({
+                status:"fail",
+                res_msg:"please check the data once again"
+            })
+        }else if(!Objchk){
+            return res.status(404).send({
+                status:"fail",
+                res_msg:"please check the data id once again"
+            })
+        }
+
+        const delete_check = await todo_list.findOne({"_id":obj_id})
+        if(delete_check){
+            try{
+                await todo_list.deleteOne({"_id":obj_id});
+                return res.status(200).send({
+                    status:"success",
+                    res_msg:"Data deleted successfully"
+                })
+            }catch(e){
+                console.error("DB error:",e.message)
+                return res.status(500).send({
+                    status:"Db error",
+                    res_msg:e.message
+                })
+            }
+        }else{
+            console.error("Db error: Data not found")
+            return res.status(404).send({
+                status:"fail",
+                res_msg:"Data not found"
+            })
         }
     }
 })
