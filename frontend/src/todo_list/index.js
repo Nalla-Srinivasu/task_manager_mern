@@ -1,7 +1,7 @@
 import { Component } from "react";
 import './index.css'
 import ListTask from '../ListTask'
-
+import GenerateToken from "../generateToken";
 
 class todo_list extends Component{
     state = {
@@ -12,7 +12,8 @@ class todo_list extends Component{
         taskData:[],
         is_loading: false,
         input_action:"add_data",
-        data_id:""
+        data_id:"",
+        token:localStorage.getItem("token") || ""
     }
     componentDidMount(){
         this.getListData();
@@ -24,6 +25,25 @@ class todo_list extends Component{
 
     categoryNameEvent = event =>{
         this.setState({name:event.target.value})
+    }
+
+    checkToken = (props) => {
+        const {token} =  this.state.token
+        console.log("token",token)
+        if(token !== "" && token !== null && token !== undefined){
+            return true;
+        }else{
+            const getToken = new GenerateToken();
+            const token_res = getToken.createToken({props});
+            if(token_res){
+                this.setState({token:localStorage.getItem("token")})
+                return true;
+            }else{
+                this.setState({token:"",responseMsg:"Token is not generating"})
+                console.error("Token is not generating")
+                return false;
+            }
+        }
     }
 
     onSubmitForm = async () => {
@@ -69,26 +89,32 @@ class todo_list extends Component{
         }
     }        
 
-    getListData = async() => {        
+    getListData = async() => {
         const data = {
             action:"get_data"
         }
-        const url = "http://localhost:5000/todo"
-        const options = {                
-            method:"POST",
-            headers:{
-                'Content-Type':'application/json'
-            },
-            body:JSON.stringify(data)
-        }
+        const checkToken = await this.checkToken(data)
+        if(checkToken){
+            const url = "http://localhost:5000/todo"
+            const options = {
+                method:"POST",
+                headers: {
+                    'Content-Type':'application/json',
+                    "Authorization": "Bearer " + this.state.token
+                },
+                body:JSON.stringify(data)
+            }
 
-        const response = await fetch(url,options)
+            const response = await fetch(url,options)
 
-        if(response.ok){
-            const result = await response.json();
-            this.setState({taskData:result.Details,is_loading:true});            
+            if(response.ok){
+                const result = await response.json();
+                this.setState({taskData:result.Details,is_loading:true});            
+            }else{
+                this.setState({responseMsg:"Data doesn't exist"});
+            }
         }else{
-            this.setState({responseMsg:"Data doesn't exist"});
+            this.setState({responseMsg:"Token is expired / not generating"})
         }
     }
 
@@ -97,15 +123,19 @@ class todo_list extends Component{
         if(taskData){            
             return (
                 <table className="table table-striped table-hover"> 
-                    <tr>
-                        <th>#ID</th>
-                        <th>category</th>
-                        <th>Name</th>
-                        <th>Action</th>
-                    </tr>
+                    <thead>
+                        <tr>
+                            <th>#ID</th>
+                            <th>category</th>
+                            <th>Name</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     {taskData.map((eachItem,index) => (                        
                         <ListTask taskData={eachItem} key={eachItem._id} sno={index+1} crud_data={this.crudData}/>
-                    ))}                    
+                    ))}
+                    </tbody>
                 </table>
             )
         }else{
