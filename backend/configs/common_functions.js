@@ -1,10 +1,10 @@
-async function generateToken(payload,screatekey) {
+async function generateToken(payload,screatekey=global.tokenKey) {
     const jwtToken = require('jsonwebtoken');
-    const token = await jwtToken.sign(payload,screatekey,{expiresIn: '1h'});
+    const token = await jwtToken.sign(payload,screatekey,{expiresIn: '15m'});
     return token;
 }
 
-async function verifyToken(token,screatekey){
+async function verifyToken(token,screatekey=global.tokenKey){
     const jwtToken  = require('jsonwebtoken')
     try{
         const decode = await jwtToken.verify(token,screatekey)

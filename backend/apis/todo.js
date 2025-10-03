@@ -45,6 +45,31 @@ router.post('/todo', async(req,res)=>{
     }
 
     if(req.body.action == "get_data"){
+        const token = req.headers.authorization ? req.headers.authorization.split(" ")[1]:"";
+        if(!token){
+            return res.status(401).json({
+                status:"error",
+                msg:"unauthorized access, token is missing"
+            })
+        }else{
+            const verify_token = await verifyToken(token)            
+            if(!verify_token){
+                return res.status(401).json({
+                    status:"error",
+                    msg:"unauthorized access, token is invalid"
+                });
+            }else if(verify_token.action != "get_data"){
+                return res.status(401).json({
+                    status:"error",
+                    msg:"unauthorized access, token action is invalid"
+                });
+            }else if(verify_token.exp < 15 * 60 * 1000){
+                return res.status(401).json({
+                    status:"error",
+                    msg:"unauthorized access, token is expired"
+                });
+            }
+        }
          try {
             const get_data = await todo_list.find().toArray(); // make sure it's plain array
             if (get_data.length > 0) {

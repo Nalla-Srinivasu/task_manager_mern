@@ -21,8 +21,18 @@ global.tokenKey  = "abcd@1234!@#$"
 app.use((req,res,next) => {
     try{
         res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-        res.header("Access-Control-Allow-Methods","GET,POST,PUT,DELETE,OPTIONS");        
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+        res.header("Access-Control-Allow-Methods","GET,POST,PUT,DELETE,OPTIONS");
+        res.header("Access-Control-Allow-Credentials", "true");
+        res.header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';");               
+
+        // dynamic route handler
+        // e.g. /todo -> ../apis/todo.js
+        // e.g. /generateToken -> ../apis/generateToken.js
+        // e.g. /user/login -> ../apis/user/login.js
+        // e.g. /user/register -> ../apis/user/register.js
+
+        // trim leading slashes
         const routePath = req.path.replace(/^\/+/, '');
         if(routePath){
            const handlerPath = path.join(__dirname, "../apis", routePath + ".js");
