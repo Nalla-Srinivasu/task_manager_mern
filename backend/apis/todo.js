@@ -3,11 +3,40 @@ const router = express.Router();
 const {generateToken,verifyToken} = require('../configs/common_functions.js');
 const {connectDb} = require('../configs/mongodb.js');
 const { ObjectId } = require('mongodb');
+const { verify } = require('jsonwebtoken');
 
 router.post('/todo', async(req,res)=>{    
     const db = await connectDb();
     const todo_list = db.collection('todo_list');
+    const header_token = req.headers.authorization
     if(req.body.action == "add_data"){
+        const token =  header_token !== "" && header_token !== undefined ? header_token.split(" ")[1]:false;
+        if(!token){
+            return res.status(401).json({
+                status:"error",
+                res_msg:"unauthorized access, token is missing"
+            })
+        }else{
+            const verify_token = await verifyToken(token)            
+            if(!verify_token){
+                return res.status(401).json({
+                    status:"error",
+                    msg:"unauthorized access, token is invalid"
+                });
+            }else if(verify_token.action !== "add_data"){
+                return res.status(401).json({
+                    status:"error",
+                    msg:"unauthorized access, token action is invalid"
+                });
+            }else if(verify_token.exp < 15 * 60 * 1000){
+                return res.status(401).json({
+                    status:"error",
+                    msg:"unauthorized access, token is expired"
+                });
+            }else{
+                // remove token in cache(redis)
+            }
+        }
         const {category,name} = req.body;        
         // const res_tag = ""
         if(category == "" || name == ""){
@@ -45,7 +74,7 @@ router.post('/todo', async(req,res)=>{
     }
 
     if(req.body.action == "get_data"){
-        const token = req.headers.authorization ? req.headers.authorization.split(" ")[1]:"";
+        const token =  header_token !== "" && header_token !== undefined ? header_token.split(" ")[1]:false;
         if(!token){
             return res.status(401).json({
                 status:"error",
@@ -68,6 +97,8 @@ router.post('/todo', async(req,res)=>{
                     status:"error",
                     msg:"unauthorized access, token is expired"
                 });
+            }else{
+               // remove token in cache(redis)
             }
         }
          try {
@@ -93,6 +124,33 @@ router.post('/todo', async(req,res)=>{
     }
 
     if(req.body.action == "update_data"){
+        const token =  header_token !== "" && header_token !== undefined ? header_token.split(" ")[1]:false;
+        if(!token){
+            return res.status(401).json({
+                status:"error",
+                res_msg:"unauthorized access, token is missing"
+            })
+        }else{
+            const verify_token = await verifyToken(token);
+            if(!verify_token){
+                return res.status(401).json({
+                    status:"error",
+                    res_msg:"unauthorized access, token is invalid"
+                });
+            }else if(verify_token.action !== "update_data"){
+                return res.status(401).json({
+                    status:"error",
+                    res_msg:"unauthorized access, token action is invalid"
+                })
+            }else if(verify_token.exp < 15 * 60 * 1000){
+                return res.status(401).json({
+                    status:"error",
+                    res_msg:"unauthorized access, token is expired"
+                });
+            }else{
+                // remove token in cache(redis)
+            }
+        }
         const {category,name,data_id} = req.body;
         const obj_id = await new ObjectId(data_id)
         const Objchk = await ObjectId.isValid(data_id)
@@ -146,6 +204,35 @@ router.post('/todo', async(req,res)=>{
     }
 
     if(req.body.action === "delete_data"){
+
+        const token =  header_token !== "" && header_token !== undefined ? header_token.split(" ")[1]:false;
+        if(!token){
+            return res.status(401).json({
+                status:"error",
+                res_msg:"unauthorized access, token is missing"
+            })
+        }else{
+            const verify_token = await verifyToken(token)
+            if(!verify_token){
+                return res.status(401).json({
+                    status:"error",
+                    res_msg:"unauthorized access, token is invalid"
+                });
+            }else if(verify_token.action !== "delete_data"){
+                return res.status(401).json({
+                    status:"error",
+                    res_msg:"unauthorized access, token action is invalid"
+                });
+            }else if(verify_token.exp < 15 * 60 * 1000){
+                return res.status(401).json({
+                    status:"error",
+                    res_msg:"unauthorized access, token is expired"
+                });
+            }else{
+                // remove token in cache(redis)
+            }
+        }
+
         const {data_id} = req.body;
         const obj_id = await new ObjectId(data_id)
         const Objchk = await ObjectId.isValid(data_id)
