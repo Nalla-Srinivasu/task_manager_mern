@@ -1,7 +1,7 @@
 import { Component } from "react";
 import './index.css'
 import ListTask from '../ListTask'
-import GenerateToken from "../generateToken";
+import GenerateToken from "../generateToken"; 
 
 class todo_list extends Component{
     state = {
@@ -29,9 +29,9 @@ class todo_list extends Component{
     checkToken = async(props) => {        
         const getToken = new GenerateToken();
         const token_res = getToken.createToken({props});
-        if(token_res){
-            const setToken = localStorage.getItem("token");
-            return setToken;
+        console.log(token_res);
+        if(token_res){            
+            return localStorage.getItem("token");
         }else{
             this.setState({responseMsg:"Token is not generating"})
             localStorage.removeItem("token")
@@ -50,40 +50,39 @@ class todo_list extends Component{
                 data_id:this.state.data_id
             }
             const checkToken = await this.checkToken(data);
-            if(checkToken){
-                const {token} = await this.state;
-                const url = "http://localhost:5000/todo"
-                const options = {                
-                    method:"POST",
-                    headers:{
-                        'Content-Type':'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body:JSON.stringify(data)
-                }
+            if(!checkToken){
+                this.setState({responseMsg:"Token is expired / not generating"})
+                localStorage.removeItem("token")
+                return false
+            }                          
+            const url = "http://localhost:5000/todo"
+            const options = {                
+                method:"POST",
+                headers:{
+                    'Content-Type':'application/json',
+                    'Authorization': `Bearer ${checkToken}`
+                },
+                body:JSON.stringify(data)
+            }
 
-                const response = await fetch(url,options)            
-                const insertion_res =  await response.json();
-                if(insertion_res.data.status === "error"){
-                    localStorage.removeItem("token");
-                    this.setState({responseMsg:insertion_res.data.res_msg})
-                    this.onSubmitForm();
-                }
-                if(response.status === 200){
-                    if(insertion_res.status === "success"){
-                        localStorage.removeItem("token");                        
-                        this.setState({responseMsg:"Data " + (input_action === "add_data"?"added":"updated") +" successfully",category:"",name:"",error:[],input_action:"add_data"});
-                        await this.getListData();
-                    }else{
-                        this.setState({responseMsg:"Data doesn't add successfully"});
-                    }
+            const response = await fetch(url,options)            
+            const insertion_res =  await response.json();
+            if(insertion_res.status === "error"){
+                localStorage.removeItem("token");
+                this.setState({responseMsg:insertion_res.data.res_msg})
+                this.onSubmitForm();
+            }
+            if(response.status === 200){
+                if(insertion_res.status === "success"){
+                    localStorage.removeItem("token");                        
+                    this.setState({responseMsg:"Data " + (input_action === "add_data"?"added":"updated") +" successfully",category:"",name:"",error:[],input_action:"add_data"});
+                    await this.getListData();
                 }else{
                     this.setState({responseMsg:"Data doesn't add successfully"});
                 }
             }else{
-                localStorage.removeItem("Token");
-                this.setState({ responseMsg:"Token is expired / not generating"});
-            }
+                this.setState({responseMsg:"Data doesn't add successfully"});
+            }            
 
         }else{
             this.setState(prevState=>({
@@ -101,17 +100,18 @@ class todo_list extends Component{
             action:"get_data"
         }
         const checkToken = await this.checkToken(data);
-        console.log(checkToken);
-        const token = checkToken !== "" && checkToken !== null && checkToken !== undefined ? checkToken : false;
-        console.log(token);
-        if(token){            
-            console.log("token",token)            
+        console.log("token",checkToken)
+        if(!checkToken){
+            this.setState({responseMsg:"Token is expired / not generating"})
+            localStorage.removeItem("token")
+            return false
+        }else if(checkToken !== "" && checkToken !== null && checkToken !== undefined){                
             const url = "http://localhost:5000/todo"
             const options = {
                 method:"POST",
                 headers: {
                     'Content-Type':'application/json',
-                    "Authorization": "Bearer " + token
+                    "Authorization": `Bearer ${checkToken}`
                 },
                 body:JSON.stringify(data)
             }
@@ -129,9 +129,6 @@ class todo_list extends Component{
             }else{
                 this.setState({responseMsg:"Data doesn't exist"});
             }
-        }else{
-            localStorage.removeItem("token");
-            this.setState({responseMsg:"Token is expired / not generating"})
         }
     }
 
@@ -172,49 +169,48 @@ class todo_list extends Component{
         }
         const checkToken = await this.checkToken(delete_data)
         if(checkToken){
-            const {token} = await this.state;
-            if(delete_confirm === true){
+            this.setState({responseMsg:"Token is expired / not generating"})
+            localStorage.removeItem("token")
+            return false
+        }        
+        if(delete_confirm === true){
 
-                const options = {
-                    method:"POST",
-                    headers:{
-                        'Content-Type':'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
-                    body:JSON.stringify(delete_data)
+            const options = {
+                method:"POST",
+                headers:{
+                    'Content-Type':'application/json',
+                    'Authorization': `Bearer ${checkToken}`
+                },
+                body:JSON.stringify(delete_data)
 
+            }
+            const url = "http://localhost:5000/todo"
+            await fetch(url,options).then(async response => {
+                const result = await response.json();
+                if(result.status === "error"){
+                    localStorage.removeItem("token");
+                    this.setState({responseMsg:result.res_msg})
+                    this.DeleteData(data_id,true)
                 }
-                const url = "http://localhost:5000/todo"
-                await fetch(url,options).then(async response => {
-                    const result = await response.json();
-                    if(result.data.status === "error"){
-                        localStorage.removeItem("token");
-                        this.setState({responseMsg:result.data.res_msg})
-                        this.DeleteData(data_id,true)
-                    }
-                    if(response.ok){
-                        try{
-                            result.then(data => {
-                                if(data.status === "success"){
-                                    localStorage.removeItem("token");
-                                    this.setState({responseMsg:data.res_msg})
-                                    this.getListData()
-                                }else{
-                                    this.setState({responseMsg:data.res_msg})
-                                }
-                            })
-                        }catch(e){
-                            this.setState({responseMsg:response.data.res_msg})
-                        }
-                    }else{                        
+                if(response.ok){
+                    try{
+                        result.then(data => {
+                            if(data.status === "success"){
+                                localStorage.removeItem("token");
+                                this.setState({responseMsg:data.res_msg})
+                                this.getListData()
+                            }else{
+                                this.setState({responseMsg:data.res_msg})
+                            }
+                        })
+                    }catch(e){
                         this.setState({responseMsg:response.data.res_msg})
                     }
-                })
-            }
-        }else{
-            localStorage.removeItem("token");
-            this.setState({responseMsg:"Token is expired / not generating"});
-        }
+                }else{                        
+                    this.setState({responseMsg:response.data.res_msg})
+                }
+            })
+        }       
     }
 
     crudData = (type,id) => {
@@ -234,10 +230,50 @@ class todo_list extends Component{
         this.setState({input_action:"add_data",category:"",name:"",data_id:""})
     }
 
+    onSearch = async () => {
+        const {category,name} = this.state;
+
+        if(category !== "" || name !== ""){
+            const url = `http://localhost:5000/todo?category=${category}&name=${name}`;            
+
+            const options = {
+                method:"GET",
+                headers:{
+                    'Content-Type':"application/json"
+                }
+            }
+
+            const response = await fetch(url,options)
+            const response_msg = await response.json();
+            console.log(response_msg);
+            if(response.ok){
+                if(response_msg.status === "success"){
+                    this.setState({taskData:response_msg.data})
+                    this.renderListofData();
+                }else{
+                    this.setState({response_msg:"Dat is doesn't exist"})
+                }
+            }else{
+                this.setState({response_msg:"Internal server error"})
+            }
+        }else{
+            this.setState({response_msg:"atleast enter any data"})
+        }
+    }
+
+    clear = () => {
+        this.setState({
+            category:"",
+            name:"",                       
+            input_action:"add_data",
+            data_id:""
+        });
+        this.getListData()
+    }
 
     render(){
         const {category,name,error,responseMsg,is_loading,input_action} = this.state
-        return(
+        return(                        
             <div className="form-container">
                 {responseMsg && <p className="text-warning">{responseMsg}</p>}
                 <div className="mb-3 row">
@@ -263,11 +299,13 @@ class todo_list extends Component{
                 </div>  
                 {error.name && <p className="text-danger">{error.name}</p>}
                 <div className="d-flex flex-row justify-content-between">
+                    <button type="submit" className="btn btn-secondary search_btn" onClick={this.onSearch}>Search</button>
+                    <button type="submit" className="btn btn-danger search_btn" onClick={this.clear}>clear</button>
                     <button type="submit" className="btn btn-primary add_btn" onClick={this.onSubmitForm}>+</button>
                     {input_action === 'update_data' && <button type="submit" className="btn btn-primary add_btn" onClick={this.cancelCrud}>x</button>}
                 </div>
                 {is_loading && this.renderListofData()}
-            </div>
+            </div>            
         )
     }
 }

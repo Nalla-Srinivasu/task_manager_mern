@@ -1,6 +1,7 @@
 const express = require('express');
 const url = require('url');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 const session = require('express-session');
 
@@ -48,6 +49,7 @@ app.use((req,res,next) => {
                 return app.use("/" + routePath, handlerModule); // router style
             }
         }
+               
        next();
     }catch(error){
         console.error("Error in middleware:", error);

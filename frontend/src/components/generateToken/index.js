@@ -17,15 +17,17 @@ class GenerateToken extends Component{
         if(response.status === 200){
             const res =  await response.json();
             if(res.status === "success"){
-                localStorage.setItem("token", res.token)
-            }else{
-                localStorage.removeItem("token")
-                return false;
+                const set_token = await localStorage.setItem("token", res.token)
+                if(set_token){
+                    return res.token;
+                }
+            }else if(res.status === "fail"){
+                localStorage.removeItem("token") 
+                return false;               
             }
         }else{
             localStorage.removeItem("token");
-            console.error("Error in generating token");
-            return false;
+            console.error("Error in generating token");            
         }
     }
 }
