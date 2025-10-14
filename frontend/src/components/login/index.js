@@ -1,6 +1,10 @@
 import { Component } from "react";
-
+import Cookies from "js-cookie";
 import './index.css';
+import { withNavigate } from "../../common_funtions";
+import { Navigate } from "react-router-dom";
+
+// @withNavigate
 
 class login extends Component {
     state = {
@@ -49,7 +53,7 @@ class login extends Component {
         }
     }
 
-    login = () =>{
+    login = async () =>{
         const validate = this.onValidate('all')
         if(validate){
             const {username,password} = this.state;
@@ -68,8 +72,11 @@ class login extends Component {
                 body: JSON.stringify(data)
             }
 
-            const response = fetch(url,options)
+            const response = await fetch(url,options)
             if(response.ok){
+                this.props.navigate('/', { replace: true })
+                const data = await response.json();
+                Cookies.set('AuthID', data.token, {expires: 1/24}); // Expires in 1 hour
                 console.log("Login successful");
             }else{
                 console.error("Login failed");
@@ -78,6 +85,10 @@ class login extends Component {
     }
 
     render(){
+        const authToken = Cookies.get("AuthID");
+        if(authToken){
+            return <Navigate to="/" replace={true} />
+        }
         const {username,password,varErrors} = this.state;
         console.log(varErrors);
         return(
@@ -125,4 +136,4 @@ class login extends Component {
     }
 }
 
-export default login;
+export default withNavigate(login);

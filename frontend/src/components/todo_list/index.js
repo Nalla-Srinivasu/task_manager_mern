@@ -1,7 +1,9 @@
 import { Component } from "react";
 import './index.css'
 import ListTask from '../ListTask'
-import GenerateToken from "../generateToken"; 
+import GenerateToken from "../generateToken";
+import Cookies from "js-cookie";
+import {Navigate} from 'react-router-dom'
 
 class todo_list extends Component{
     state = {
@@ -28,13 +30,18 @@ class todo_list extends Component{
 
     checkToken = async(props) => {        
         const getToken = new GenerateToken();
-        const token_res = getToken.createToken({props});
-        console.log(token_res);
-        if(token_res){            
-            return localStorage.getItem("token");
+        const token_res = getToken.createToken({props});        
+        if(token_res){
+            const get_token = Cookies.get("token");            
+            if(get_token === "" || get_token === null || get_token === undefined){
+                const new_token = await getToken.createToken({props});
+                return new_token;
+            }else{
+                return get_token;
+            }
         }else{
             this.setState({responseMsg:"Token is not generating"})
-            localStorage.removeItem("token")
+            Cookies.remove("token")
             console.error("Token is not generating")
             return false;
         }        
@@ -50,9 +57,9 @@ class todo_list extends Component{
                 data_id:this.state.data_id
             }
             const checkToken = await this.checkToken(data);
-            if(!checkToken){
+            if(checkToken === false || checkToken === undefined || checkToken === null || checkToken === ""){
                 this.setState({responseMsg:"Token is expired / not generating"})
-                localStorage.removeItem("token")
+                Cookies.remove("token")
                 return false
             }                          
             const url = "http://localhost:5000/todo"
@@ -68,13 +75,13 @@ class todo_list extends Component{
             const response = await fetch(url,options)            
             const insertion_res =  await response.json();
             if(insertion_res.status === "error"){
-                localStorage.removeItem("token");
+                Cookies.remove("token");
                 this.setState({responseMsg:insertion_res.data.res_msg})
                 this.onSubmitForm();
             }
             if(response.status === 200){
                 if(insertion_res.status === "success"){
-                    localStorage.removeItem("token");                        
+                    Cookies.remove("token");
                     this.setState({responseMsg:"Data " + (input_action === "add_data"?"added":"updated") +" successfully",category:"",name:"",error:[],input_action:"add_data"});
                     await this.getListData();
                 }else{
@@ -99,11 +106,11 @@ class todo_list extends Component{
         const data = {
             action:"get_data"
         }
-        const checkToken = await this.checkToken(data);
-        console.log("token",checkToken)
+        const checkToken = await this.checkToken(data);        
+        
         if(!checkToken){
             this.setState({responseMsg:"Token is expired / not generating"})
-            localStorage.removeItem("token")
+            Cookies.remove("token")
             return false
         }else if(checkToken !== "" && checkToken !== null && checkToken !== undefined){                
             const url = "http://localhost:5000/todo"
@@ -119,12 +126,12 @@ class todo_list extends Component{
             const response = await fetch(url,options)
             const result = await response.json();
             if(result.status === "error"){
-                localStorage.removeItem("token");
+                Cookies.remove("token");
                 this.setState({responseMsg:result.msg})
                 this.getListData();
             }
             if(response.ok){
-                localStorage.removeItem("token");
+                Cookies.remove("token");
                 this.setState({taskData:result.Details,is_loading:true});            
             }else{
                 this.setState({responseMsg:"Data doesn't exist"});
@@ -168,9 +175,9 @@ class todo_list extends Component{
             data_id:data_id
         }
         const checkToken = await this.checkToken(delete_data)
-        if(checkToken){
+        if(checkToken === false || checkToken === undefined || checkToken === null || checkToken === ""){
             this.setState({responseMsg:"Token is expired / not generating"})
-            localStorage.removeItem("token")
+            Cookies.remove("token")
             return false
         }        
         if(delete_confirm === true){
@@ -188,7 +195,7 @@ class todo_list extends Component{
             await fetch(url,options).then(async response => {
                 const result = await response.json();
                 if(result.status === "error"){
-                    localStorage.removeItem("token");
+                    Cookies.remove("token");
                     this.setState({responseMsg:result.res_msg})
                     this.DeleteData(data_id,true)
                 }
@@ -196,7 +203,7 @@ class todo_list extends Component{
                     try{
                         result.then(data => {
                             if(data.status === "success"){
-                                localStorage.removeItem("token");
+                                Cookies.remove("token");
                                 this.setState({responseMsg:data.res_msg})
                                 this.getListData()
                             }else{
@@ -272,6 +279,10 @@ class todo_list extends Component{
     }
 
     render(){
+        const authToken = Cookies.get("AuthID");        
+        if(!authToken){            
+            return <Navigate to="/login" replace={true} />            
+        }
         const {category,name,error,responseMsg,is_loading,input_action} = this.state
         return(                        
             <div className="form-container">

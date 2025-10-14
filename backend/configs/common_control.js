@@ -4,9 +4,15 @@ const path = require('path');
 const fs = require('fs');
 const app = express();
 const session = require('express-session');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 app.use(express.json())
-
+app.use(cookieParser());
+app.use(cors({
+  origin: 'http://localhost:3000', // your React app
+  credentials: true                // important!
+}));
 
 app.use(session({
     secret:"abcdef123!@#", // used to sign the session ID

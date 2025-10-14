@@ -1,4 +1,5 @@
 import {Component} from 'react';
+import Cookies from 'js-cookie';
 
 class GenerateToken extends Component{  
     createToken = async(props) => {
@@ -17,16 +18,16 @@ class GenerateToken extends Component{
         if(response.status === 200){
             const res =  await response.json();
             if(res.status === "success"){
-                const set_token = await localStorage.setItem("token", res.token)
+                const set_token = Cookies.set("token", res.token,{expires: 30/1440}); // Expires in 30 minutes
                 if(set_token){
                     return res.token;
                 }
             }else if(res.status === "fail"){
-                localStorage.removeItem("token") 
+                Cookies.remove("token") 
                 return false;               
             }
         }else{
-            localStorage.removeItem("token");
+            Cookies.remove("token");
             console.error("Error in generating token");            
         }
     }
